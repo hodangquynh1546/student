@@ -1,0 +1,85 @@
+previews:
+  generation: "off"
+
+services:
+  - type: pserv
+    name: edutrack-backend
+    runtime: docker
+    plan: 1c-2g
+    region: singapore
+    branch: main
+    autoDeployTrigger: "off"
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    disk:
+      name: edutrack-uploads
+      mountPath: /app/uploads
+      sizeGB: 5
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: "8080"
+      - key: FILE_STORAGE_LOCAL_PATH
+        value: /app/uploads
+      - key: JWT_ACCESS_TOKEN_EXPIRATION
+        value: "900"
+      - key: JWT_REFRESH_TOKEN_EXPIRATION
+        value: "604800"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USER
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SMTP_ENABLED
+        value: "true"
+      - key: SMTP_AUTH
+        value: "true"
+      - key: SMTP_STARTTLS
+        value: "true"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: edutrack-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: edutrack-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+
+  - type: web
+    name: edutrack-frontend
+    runtime: docker
+    plan: 0.5c-512mb
+    region: singapore
+    branch: main
+    autoDeployTrigger: "off"
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    healthCheckPath: /
+    envVars:
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: pserv
+          name: edutrack-backend
+          property: hostport

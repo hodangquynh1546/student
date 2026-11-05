@@ -41,6 +41,7 @@ Ngày bắt đầu: 2026-11-05. Dự án mới, tách khỏi Hong Beauty.
 - Làm mới và đăng xuất qua cookie kiểm tra Origin theo allowlist hoặc Fetch Metadata `same-origin` khi thiếu Origin; từ chối khi cả hai thiếu. 5 bài kiểm thử riêng đạt sau build sạch; toàn bộ backend đã chạy lại đạt.
 - Cả ba vai trò có API và màn hình tự sửa họ tên, số điện thoại, ngày sinh; không cho đổi email/role qua form. Màn hình đổi mật khẩu yêu cầu đăng nhập lại. Kiểm thử backend và frontend liên quan, build frontend đạt; avatar vẫn chưa triển khai.
 - Bộ tài liệu kiến trúc và hợp đồng API đã có trong `docs/`; cấu hình Docker Compose đã viết, chưa chạy container được vì môi trường hiện thiếu Docker.
+- Blueprint `render.yaml` cho backend riêng tư, frontend công khai và ổ đĩa upload đã được thêm; biến Neon/SMTP nhập tại Render, khóa Gemini thêm riêng khi có. Đã kiểm tra YAML theo JSON Schema chính thức của Render (0 lỗi); chưa tạo dịch vụ Render hay Neon và chưa chạy container thực tế.
 
 ## Đang làm
 - Hoàn thiện xác thực, bảo mật và các module còn thiếu. Giới hạn số yêu cầu vào endpoint xác thực nhạy cảm đã được thêm ở mức tiến trình; cần kho chia sẻ nếu chạy nhiều backend.
