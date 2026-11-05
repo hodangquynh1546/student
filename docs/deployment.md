@@ -1,6 +1,6 @@
 # Deployment
 
-This runbook describes the current implementation. Confirm completed features and test gates in `PROJECT_STATUS.md` before production use. A dedicated GitHub deploy key has been generated outside the repository, but the owner has not registered it. No production deployment, Render service or Neon database has been created by this repository work.
+This runbook describes the current implementation. Confirm completed features and test gates in `PROJECT_STATUS.md` before production use. The owner registered a dedicated GitHub deploy key and the code is on `main`. No production deployment, Render service or Neon database has been created by this repository work.
 
 ## Local Docker Compose
 

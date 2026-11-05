@@ -50,7 +50,7 @@ Ngày bắt đầu: 2026-11-05. Dự án mới, tách khỏi Hong Beauty.
 - Email nhắc hạn, upload avatar, một số màn hình/quy trình quản trị và giao diện đầy đủ theo đặc tả; Gemini và SMTP chưa được thử với credentials thật.
 - Có integration test tự động dùng PostgreSQL thật cho phân quyền và tệp bài làm; Testcontainers chưa chạy trong môi trường này do thiếu Docker. Chưa kiểm tra Docker Compose vì môi trường thiếu Docker.
 - Chưa có URL triển khai hoặc kiểm thử production.
-- Mã nguồn đã commit cục bộ nhưng chưa đẩy lên GitHub vì chưa có quyền ghi. Khóa deploy công khai đã gửi chủ repository; đang chờ chủ thêm khóa với quyền ghi. Khóa riêng nằm ngoài Git.
+- Mã nguồn đã được đẩy lên nhánh `main` của repository GitHub. Chủ repository đã thêm khóa deploy có quyền ghi; khóa riêng nằm ngoài Git. Chưa tạo dịch vụ Render hoặc cơ sở dữ liệu Neon.
 
 ## Kiểm thử gần nhất
 - `mvn test -DforkCount=0` với PostgreSQL test sau thay đổi Exam Builder, AI, action token, email outbox, bảo vệ refresh/logout và hồ sơ cá nhân: 102 bài kiểm thử backend đạt, 0 lỗi/0 bỏ qua, Flyway V1–V10. `npm run build` đạt; `npm test` đạt 10/10 bài frontend. Chưa kiểm thử trình duyệt end-to-end hoặc Docker Compose.
