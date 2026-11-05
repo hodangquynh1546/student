@@ -1,0 +1,12 @@
+export type Role='ADMIN_TEACHER'|'STUDENT'|'PARENT';
+export type User={id:string;email:string;fullName:string;phone?:string|null;dateOfBirth?:string|null;avatarUrl?:string|null;role:Role;status:string};
+export type Session={accessToken:string;expiresIn:number;user:User};
+export type Student={id:string;email:string;fullName:string;phone?:string;dateOfBirth?:string;status:string};
+export type Classroom={id:string;code:string;name:string;description:string;subject:string;gradeLevel?:string;academicYear:string;startsOn?:string;endsOn?:string;status:string;studentCount:number};
+export type Question={id:string;type:string;subject:string;gradeLevel?:string;topic:string;difficulty:string;body:string;content:unknown;answerKey:unknown;explanation?:string;rubric?:string;defaultPoints:number;version:number};
+export type QuestionPage={items:Question[];total:number;page:number;size:number};
+export type Exam={id:string;title:string;description?:string;kind:string;status:string;startsAt?:string;endsAt?:string;durationMinutes?:number;maxAttempts:number;showResultImmediately?:boolean;showAnswersAfterSubmit?:boolean;shuffleQuestions?:boolean;shuffleOptions?:boolean;allowDraft?:boolean;allowLate?:boolean;totalPoints:number;questionCount:number;version:number};
+export type ExamQuestion={id:string;sourceQuestionId:string|null;position:number;type:string;body:string;content:string;answerKey:string;explanation?:string|null;rubric?:string|null;points:number};
+export type ExamDetail={exam:Exam;questions:ExamQuestion[]};
+export type Child={id:string;fullName:string;email:string};
+export type ParentLink={id:string;studentId:string;studentName:string;parentEmail:string;status:string;expiresAt:string};

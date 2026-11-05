@@ -39,26 +39,18 @@ public class SchoolController {
 
     private final UserAccountRepository users;
     private final AuthService auth;
-    private final ParentLinkService parentLinks;
+    private final StudentAccountService studentAccounts;
     private final JdbcTemplate db;
 
-    public SchoolController(UserAccountRepository users, AuthService auth, ParentLinkService parentLinks, JdbcTemplate db) {
-        this.users = users; this.auth = auth; this.parentLinks = parentLinks; this.db = db;
+    public SchoolController(UserAccountRepository users, AuthService auth, StudentAccountService studentAccounts, JdbcTemplate db) {
+        this.users = users; this.auth = auth; this.studentAccounts=studentAccounts; this.db = db;
     }
 
     @PostMapping("/admin/students") @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN_TEACHER')") @Transactional
     public StudentView createStudent(@Valid @RequestBody StudentInput input, JwtAuthenticationToken principal) {
-        String email = UserAccount.normalizeEmail(input.email());
-        if (users.findByEmailIgnoreCase(email).isPresent()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được sử dụng");
-        var user = new UserAccount(email, input.fullName(), UserRole.STUDENT, AccountStatus.PENDING_ACTIVATION, null);
-        user.setProfile(input.fullName(), input.phone(), input.dateOfBirth(), null);
-        try { users.saveAndFlush(user); }
-        catch (DataIntegrityViolationException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được sử dụng"); }
-        auth.sendActivation(user);
-        if (input.parentEmail() != null && !input.parentEmail().isBlank())
-            parentLinks.invite(user.getId(), input.parentEmail(), UUID.fromString(principal.getName()));
-        return StudentView.of(user);
+        return StudentView.of(studentAccounts.create(input.email(),input.fullName(),input.phone(),input.dateOfBirth(),
+            input.parentEmail(),UUID.fromString(principal.getName())));
     }
 
     @GetMapping("/admin/students") @PreAuthorize("hasRole('ADMIN_TEACHER')")
@@ -166,6 +158,23 @@ public class SchoolController {
     public List<ClassroomView> myClassrooms(JwtAuthenticationToken principal) {
         return db.query(CLASS_SELECT + " JOIN student_enrollments mine ON mine.classroom_id=c.id AND mine.left_at IS NULL WHERE mine.student_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC",
             this::mapClassroom, UUID.fromString(principal.getName()));
+    }
+
+    @GetMapping("/parent/children/{studentId}/classrooms") @PreAuthorize("hasRole('PARENT')")
+    public List<ClassroomView> childClassrooms(@PathVariable UUID studentId, JwtAuthenticationToken principal) {
+        UUID parentId = UUID.fromString(principal.getName());
+        Boolean linked = db.queryForObject("""
+            SELECT EXISTS(SELECT 1 FROM parent_student_links l
+              JOIN parent_link_requests r ON r.id=l.verified_request_id
+              JOIN users p ON p.id=l.parent_id
+              WHERE l.parent_id=? AND l.student_id=? AND l.revoked_at IS NULL
+                AND r.student_id=l.student_id AND lower(r.parent_email)=lower(p.email)
+                AND r.status='ACCEPTED' AND p.role='PARENT' AND p.status='ACTIVE')
+            """, Boolean.class, parentId, studentId);
+        if (!Boolean.TRUE.equals(linked))
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy học sinh đã liên kết");
+        return db.query(CLASS_SELECT + " JOIN student_enrollments mine ON mine.classroom_id=c.id AND mine.left_at IS NULL WHERE mine.student_id=? AND c.deleted_at IS NULL ORDER BY c.created_at DESC",
+            this::mapClassroom, studentId);
     }
 
     private UserAccount student(UUID id) {

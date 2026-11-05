@@ -1,0 +1,48 @@
+# Deployment
+
+This runbook describes the current implementation. Confirm completed features and test gates in `PROJECT_STATUS.md` before production use. A dedicated GitHub deploy key has been generated outside the repository, but the owner has not registered it. No production deployment, Render service or Neon database has been created by this repository work.
+
+## Local Docker Compose
+
+Copy `.env.example` to `.env`, set private values for `DB_PASSWORD`, `JWT_SECRET` (at least 32 random bytes) and `ADMIN_INITIAL_PASSWORD` (at least 16 characters), then run `python3 scripts/check-env.py .env`. Start with `docker compose --profile dev up --build -d`. Compose provisions PostgreSQL 16 on a persistent volume, a persistent upload volume, the backend, the frontend and Mailpit. Mailpit is reachable at `http://localhost:8025` only from the local host. The frontend serves `http://localhost:5173` and proxies `/api` to the backend. Health checks gate startup; inspect `docker compose ps` and `docker compose logs backend`.
+
+The teacher account is seeded from the environment. Flyway runs before the application accepts traffic and Hibernate validates the schema. Never run the production profile with the example environment file. Neither the Compose stack nor the browser end-to-end flow has been verified on this host because Docker is unavailable here.
+
+## Render and Neon preparation
+
+This deployment uses two Render Docker services from the same repository and a Neon PostgreSQL database. Create the Neon database first. Keep its connection details private. Set the backend `DATABASE_URL` to a **JDBC** URL such as `jdbc:postgresql://<neon-host>:5432/<database>?sslmode=require`, and set `DATABASE_USER` and `DATABASE_PASSWORD` separately. The URI shown by Neon starts with `postgresql://`; convert its scheme to `jdbc:postgresql://` and remove embedded credentials. Use the direct connection hostname for Flyway migrations. Test migrations against a staging database or Neon branch before production.
+
+Create a Render **private service** for the backend from the linked GitHub repository. Set Language to Docker and Root Directory to `backend`; its Dockerfile and build context are then relative to that directory. Use the intended production branch and disable automatic deployment until release gates pass. Leave build and start command overrides empty: the Dockerfile builds the JAR and its entrypoint validates ENV and starts Java. Set `APP_ENV=production`, `SPRING_PROFILES_ACTIVE=prod`, `PORT=8080`, `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `FRONTEND_URL`, `CORS_ORIGIN`, `SMTP_ENABLED=true`, `SMTP_AUTH=true`, `SMTP_STARTTLS=true`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`, `JWT_ACCESS_TOKEN_EXPIRATION=900` and `JWT_REFRESH_TOKEN_EXPIRATION=604800`. For a typical authenticated SMTP service on port 587, both auth and STARTTLS must be enabled; verify the provider's exact settings. Development Mailpit uses `SMTP_AUTH=false` and `SMTP_STARTTLS=false`. Optional AI variables are `GEMINI_API_KEY`, `GEMINI_MODEL` and `GEMINI_TIMEOUT_SECONDS`. Set `FILE_STORAGE_LOCAL_PATH=/app/uploads`. `ADMIN_PASSWORD` is only needed to seed the first teacher account; keep it private. The backend fails startup on weak or missing production secrets. Find the backend's internal address in Render and use it for the frontend upstream.
+
+Create a Render **web service** for the frontend from the same repository and branch. Set Language to Docker and Root Directory to `frontend`; leave build and start overrides empty. Set `BACKEND_UPSTREAM=http://<backend-internal-host>:8080`. The Docker image substitutes this value into Nginx on startup, keeps `/api` on the same public origin and listens on Render's `PORT`. Set `FRONTEND_URL=https://<frontend-public-host>` and `CORS_ORIGIN=https://<frontend-public-host>` on the backend after the public hostname is known. Configure the frontend service's HTTP health path as `/`. Keep both services in the same Render region so their private networking is available. Render private services use a platform TCP health check; the backend's `/actuator/health/readiness` is available for manual or in-network readiness checks.
+
+The frontend container's `PORT` defaults to 80 for Compose. Render provides `PORT` to its web services. If a frontend deployment cannot reach the backend, verify `BACKEND_UPSTREAM` uses the actual internal hostname and service port, and check `/api/v1/...` through the public frontend URL. The backend has no public URL in this arrangement.
+
+Render's filesystem is ephemeral unless a persistent disk is attached to a paid service. Attach a disk at `/app/uploads` for local file storage, or implement and configure S3-compatible storage before relying on uploads in production. A database alone does not preserve student essay images. Keep uploads private and back them up with the database. Do not route Mailpit publicly.
+
+### GitHub access and deploy keys
+
+Connect the repository to Render through Render's GitHub integration. For a private repository, grant the Render GitHub app access to this repository in GitHub's app installation settings. Render uses that integration to fetch source and trigger linked-branch deploys; a GitHub deploy key is not required for this path.
+
+A GitHub deploy key is useful only if a separate server or build runner must pull this repository over SSH. Generate a dedicated key pair on that server, add **only the public key** in this repository's GitHub Settings → Deploy keys, and leave write access disabled for a pull-only deployment. Keep the private key on the server with restricted file access; never place either private key or its contents in this repository, a Render ENV variable, or a support message. Verify a read-only clone from that server, then record the key's purpose and rotate/revoke it when the server is retired. GitHub deploy keys are scoped to one repository and do not expire automatically.
+
+To finish account-specific setup, the owner must provide or authorize access to the GitHub repository, Render workspace and Neon project; choose the production domain, SMTP provider and a paid persistent-storage option if uploads are used. Keep all secret values in those services' private settings. The setup can be done together after the application passes the release checks; no password or private key needs to be sent through chat.
+
+## Release checks
+
+1. Run `python3 scripts/check-env.py` against a private production environment file before entering values into Render. The application also validates secrets at startup.
+2. Back up the production database and upload storage. Verify a restore on a separate database before applying new migrations.
+3. Deploy the backend, inspect Flyway and startup logs, and confirm readiness. Deploy the frontend after the backend internal address is known.
+4. Check login, refresh, logout, teacher/student/parent authorization, a student invitation email, parent link confirmation, one exam submission and private media access with real PostgreSQL and SMTP. Confirm refresh cookies are `HttpOnly`, `Secure` and same-origin in a browser.
+5. Verify Gemini separately when a real key and model are configured. Without them, non-AI learning flows should still work and AI routes should report unavailable.
+6. Import a small UTF-8 CSV and XLSX file containing one valid and one invalid student row. Confirm the counts, activation email and parent invitation; do not use real student data in staging.
+7. Check a class ranking and completed weekly/monthly report using published results. Confirm student and parent routes show only their own or linked child's metrics, and PDF/XLSX exports match the stored snapshot. Confirm an assignment and result-publication notification is visible only to the intended recipient.
+8. Review the current cookie-authenticated refresh/logout CSRF boundary before public exposure, and verify private upload persistence across a service restart. Assignment and result-publication emails use a durable outbox, but reminder scheduling and real SMTP delivery have not yet been verified.
+
+Do not publish until the end-to-end and security gates in `PROJECT_STATUS.md` pass. Roll back application code only when it remains compatible with the migrated schema.
+
+## Backup and restore
+
+Capture a consistent PostgreSQL snapshot and the upload volume at the same release point. Store both encrypted and outside the running services. Restore to a separate environment and verify a student, class, attempt, grade history and related media can be read. Set retention and recovery targets with the owner before production.
+
+Current platform references: [Render GitHub integration](https://render.com/docs/git-provider), [Render Docker setup](https://render.com/docs/docker), [Render private networking](https://render.com/docs/private-network), [Render disks](https://render.com/docs/disks), [GitHub deploy keys](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys), and [Neon connection guidance](https://neon.com/blog/oops-proof-your-vibe-code-with-neon-because-mistakes-happen).

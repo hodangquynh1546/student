@@ -87,6 +87,15 @@ public class QuestionService {
             q.defaultPoints()==null || q.defaultPoints().compareTo(BigDecimal.ZERO)<=0 || q.defaultPoints().compareTo(new BigDecimal("100"))>0 ||
             q.content()==null || !q.content().isObject() || q.answerKey()==null || !q.answerKey().isObject()) throw bad("Dữ liệu câu hỏi không hợp lệ");
         JsonNode a=q.answerKey(),c=q.content();
+        JsonNode policy=a.path("gradingPolicy");
+        if(!policy.isMissingNode()) {
+            String mode=policy.path("mode").asText("EXACT");
+            if(!policy.isObject() || (!"EXACT".equals(mode) && !"PARTIAL".equals(mode)) ||
+                (policy.has("caseSensitive") && !policy.path("caseSensitive").isBoolean()) ||
+                (policy.has("normalizeWhitespace") && !policy.path("normalizeWhitespace").isBoolean()) ||
+                ("PARTIAL".equals(mode) && q.type()!=Type.MULTIPLE_CHOICE && q.type()!=Type.MATCHING &&
+                    q.type()!=Type.ORDERING && q.type()!=Type.FILL_IN_THE_BLANK)) throw bad("Quy tắc chấm không hợp lệ");
+        }
         switch(q.type()) {
             case SINGLE_CHOICE -> {
                 Set<String> ids=ids(c.path("options"),2,20);

@@ -1,0 +1,6 @@
+edutrack:
+  mail:
+    enabled: ${SMTP_ENABLED:true}
+logging:
+  level:
+    com.edutrack: ${LOG_LEVEL:INFO}

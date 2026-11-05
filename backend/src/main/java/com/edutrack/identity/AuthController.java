@@ -5,14 +5,20 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,12 +33,20 @@ public class AuthController {
     public record EmailRequest(@Email @NotBlank String email) { }
     public record TokenPasswordRequest(@NotBlank String token, @Size(min = 12, max = 72) String password) { }
     public record ChangePasswordRequest(@NotBlank String currentPassword, @Size(min = 12, max = 72) String newPassword) { }
+    public record ProfileRequest(@NotBlank @Size(min = 2, max = 120) String fullName,
+                                 @Pattern(regexp = "^$|^\\+?[0-9 .()\\-]{7,30}$") String phone,
+                                 LocalDate dateOfBirth) { }
     public record SessionView(String accessToken, int expiresIn, AuthService.UserView user) { }
     private final AuthService auth;
     private final Environment environment;
     private final int refreshDays;
-    public AuthController(AuthService auth, Environment environment, @Value("${edutrack.refresh-days}") int refreshDays) {
+    private final Set<String> allowedBrowserOrigins;
+    public AuthController(AuthService auth, Environment environment, @Value("${edutrack.refresh-days}") int refreshDays,
+                          @Value("${edutrack.cors-origin}") String corsOrigins) {
         this.auth = auth; this.environment = environment; this.refreshDays = refreshDays;
+        this.allowedBrowserOrigins = Arrays.stream(corsOrigins.split(","))
+            .map(String::trim).map(origin -> origin.replaceAll("/+$", ""))
+            .filter(origin -> !origin.isBlank()).collect(Collectors.toUnmodifiableSet());
     }
 
     @PostMapping("/login")
@@ -45,6 +59,7 @@ public class AuthController {
     @PostMapping("/refresh")
     public SessionView refresh(@CookieValue(name = "edutrack_refresh", required = false) String refresh,
                                HttpServletRequest http, HttpServletResponse response) {
+        checkCookieRequestOrigin(http);
         try {
             var issued = auth.refresh(refresh, http.getHeader("User-Agent"));
             setCookie(response, issued.refreshToken(), http.isSecure());
@@ -59,11 +74,17 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@CookieValue(name = "edutrack_refresh", required = false) String refresh,
                        HttpServletRequest http, HttpServletResponse response) {
+        checkCookieRequestOrigin(http);
         auth.logout(refresh); clearCookie(response, http.isSecure());
     }
 
     @GetMapping("/me")
     public AuthService.UserView me(@AuthenticationPrincipal Jwt jwt) { return auth.me(UUID.fromString(jwt.getSubject())); }
+
+    @PutMapping("/me")
+    public AuthService.UserView updateProfile(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ProfileRequest request) {
+        return auth.updateProfile(UUID.fromString(jwt.getSubject()), request.fullName(), request.phone(), request.dateOfBirth());
+    }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgot(@Valid @RequestBody EmailRequest request) {
@@ -97,5 +118,16 @@ public class AuthController {
         boolean requireSecure = secure || !environment.acceptsProfiles(Profiles.of("dev", "test"));
         return ResponseCookie.from("edutrack_refresh", value).httpOnly(true).secure(requireSecure)
             .sameSite("Strict").path("/api/v1/auth").maxAge(age).build();
+    }
+
+    private void checkCookieRequestOrigin(HttpServletRequest http) {
+        String origin = http.getHeader("Origin");
+        String fetchSite = http.getHeader("Sec-Fetch-Site");
+        if (origin != null && !allowedBrowserOrigins.contains(origin)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid request origin");
+        }
+        if (origin == null && !"same-origin".equals(fetchSite)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid request origin");
+        }
     }
 }

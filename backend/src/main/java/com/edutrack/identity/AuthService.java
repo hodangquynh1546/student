@@ -4,6 +4,7 @@ import com.edutrack.security.JwtIssuer;
 import com.edutrack.security.TokenCodec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,8 +17,10 @@ import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class AuthService {
-    public record UserView(UUID id, String email, String fullName, UserRole role, AccountStatus status) {
-        static UserView of(UserAccount user) { return new UserView(user.getId(), user.getEmail(), user.getFullName(), user.getRole(), user.getStatus()); }
+    public record UserView(UUID id, String email, String fullName, String phone, LocalDate dateOfBirth,
+                           String avatarUrl, UserRole role, AccountStatus status) {
+        static UserView of(UserAccount user) { return new UserView(user.getId(), user.getEmail(), user.getFullName(),
+            user.getPhone(), user.getDateOfBirth(), user.getAvatarUrl(), user.getRole(), user.getStatus()); }
     }
     public record IssuedSession(String accessToken, int expiresIn, String refreshToken, UserView user) { }
     public static class InvalidRefreshException extends RuntimeException { }
@@ -82,9 +85,23 @@ public class AuthService {
     }
 
     @Transactional
+    public UserView updateProfile(UUID id, String fullName, String phone, LocalDate dateOfBirth) {
+        var user = users.findById(id).filter(u -> u.getStatus() == AccountStatus.ACTIVE)
+            .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED));
+        if (fullName == null || fullName.trim().length() < 2 || fullName.trim().length() > 120)
+            throw new ResponseStatusException(BAD_REQUEST, "Họ tên cần từ 2 đến 120 ký tự");
+        if (dateOfBirth != null && !dateOfBirth.isBefore(LocalDate.now()))
+            throw new ResponseStatusException(BAD_REQUEST, "Ngày sinh phải ở trước hôm nay");
+        user.setProfile(fullName, phone == null || phone.isBlank() ? null : phone.trim(),
+            dateOfBirth, user.getAvatarUrl());
+        return UserView.of(user);
+    }
+
+    @Transactional
     public void requestReset(String email) {
         var found = users.findByEmailIgnoreCase(UserAccount.normalizeEmail(email));
         if (found.isEmpty() || found.get().getStatus() != AccountStatus.ACTIVE) return;
+        actions.consumeResetTokens(found.get().getId(),Instant.now());
         var raw = tokens.generate();
         actions.save(new ActionToken(found.get().getId(), ActionPurpose.RESET_PASSWORD, tokens.hash(raw), null,
             Instant.now().plus(30, ChronoUnit.MINUTES)));
@@ -99,6 +116,8 @@ public class AuthService {
             .filter(t -> t.usable(Instant.now())).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Liên kết không hợp lệ hoặc đã hết hạn"));
         var user = users.findById(token.getUserId()).orElseThrow();
         user.changePassword(passwords.encode(newPassword)); token.consume();
+        actions.flush();
+        actions.consumeResetTokens(user.getId(),Instant.now());
         sessions.revokeAllForUser(user.getId(), Instant.now());
     }
 
@@ -120,6 +139,7 @@ public class AuthService {
         if (!passwords.matches(currentPassword, user.getPasswordHash()))
             throw new ResponseStatusException(BAD_REQUEST, "Mật khẩu hiện tại không đúng");
         user.changePassword(passwords.encode(newPassword));
+        actions.consumeResetTokens(userId,Instant.now());
         sessions.revokeAllForUser(userId, Instant.now());
     }
 

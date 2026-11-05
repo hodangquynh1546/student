@@ -2,6 +2,10 @@ server:
   forward-headers-strategy: framework
   port: ${PORT:8080}
 spring:
+  servlet:
+    multipart:
+      max-file-size: ${FILE_MAX_SIZE_MB:10}MB
+      max-request-size: ${FILE_MAX_SIZE_MB:10}MB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/edutrack}
     username: ${DATABASE_USER:edutrack}
@@ -17,6 +21,13 @@ spring:
     port: ${SMTP_PORT:1025}
     username: ${SMTP_USER:}
     password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+      mail.smtp.starttls.required: ${SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: ${SMTP_CONNECT_TIMEOUT_MS:10000}
+      mail.smtp.timeout: ${SMTP_READ_TIMEOUT_MS:10000}
+      mail.smtp.writetimeout: ${SMTP_WRITE_TIMEOUT_MS:10000}
 management:
   endpoints:
     web:
@@ -27,6 +38,9 @@ management:
       probes:
         enabled: true
 edutrack:
+  file:
+    local-path: ${FILE_STORAGE_LOCAL_PATH:./uploads}
+    max-size-mb: ${FILE_MAX_SIZE_MB:10}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   cors-origin: ${CORS_ORIGIN:http://localhost:5173}
   jwt:
