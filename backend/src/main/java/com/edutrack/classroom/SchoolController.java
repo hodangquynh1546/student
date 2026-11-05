@@ -22,7 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/v1")
 public class SchoolController {
     public record StudentInput(@NotBlank @Email String email, @NotBlank @Size(max=120) String fullName,
-                               @Size(max=30) String phone, LocalDate dateOfBirth) {}
+                               @Size(max=30) String phone, LocalDate dateOfBirth, @Email String parentEmail) {}
     public record StudentView(UUID id, String email, String fullName, String phone,
                               LocalDate dateOfBirth, AccountStatus status) {
         static StudentView of(UserAccount u) {
@@ -39,15 +39,16 @@ public class SchoolController {
 
     private final UserAccountRepository users;
     private final AuthService auth;
+    private final ParentLinkService parentLinks;
     private final JdbcTemplate db;
 
-    public SchoolController(UserAccountRepository users, AuthService auth, JdbcTemplate db) {
-        this.users = users; this.auth = auth; this.db = db;
+    public SchoolController(UserAccountRepository users, AuthService auth, ParentLinkService parentLinks, JdbcTemplate db) {
+        this.users = users; this.auth = auth; this.parentLinks = parentLinks; this.db = db;
     }
 
     @PostMapping("/admin/students") @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN_TEACHER')") @Transactional
-    public StudentView createStudent(@Valid @RequestBody StudentInput input) {
+    public StudentView createStudent(@Valid @RequestBody StudentInput input, JwtAuthenticationToken principal) {
         String email = UserAccount.normalizeEmail(input.email());
         if (users.findByEmailIgnoreCase(email).isPresent()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được sử dụng");
         var user = new UserAccount(email, input.fullName(), UserRole.STUDENT, AccountStatus.PENDING_ACTIVATION, null);
@@ -55,6 +56,8 @@ public class SchoolController {
         try { users.saveAndFlush(user); }
         catch (DataIntegrityViolationException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được sử dụng"); }
         auth.sendActivation(user);
+        if (input.parentEmail() != null && !input.parentEmail().isBlank())
+            parentLinks.invite(user.getId(), input.parentEmail(), UUID.fromString(principal.getName()));
         return StudentView.of(user);
     }
 
