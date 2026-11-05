@@ -37,6 +37,8 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
+      - key: ADMIN_NAME
+        value: "Giáo viên"
       - key: ADMIN_PASSWORD
         sync: false
       - key: SMTP_ENABLED
