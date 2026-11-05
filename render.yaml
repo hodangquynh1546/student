@@ -2,19 +2,16 @@ previews:
   generation: "off"
 
 services:
-  - type: pserv
+  - type: web
     name: edutrack-backend
     runtime: docker
-    plan: 1c-2g
+    plan: free
     region: singapore
     branch: main
     autoDeployTrigger: "off"
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    disk:
-      name: edutrack-uploads
-      mountPath: /app/uploads
-      sizeGB: 5
+    healthCheckPath: /actuator/health/readiness
     envVars:
       - key: APP_ENV
         value: production
@@ -22,6 +19,8 @@ services:
         value: prod
       - key: PORT
         value: "8080"
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx320m"
       - key: FILE_STORAGE_LOCAL_PATH
         value: /app/uploads
       - key: JWT_ACCESS_TOKEN_EXPIRATION
@@ -47,7 +46,7 @@ services:
       - key: SMTP_STARTTLS
         value: "true"
       - key: SMTP_PORT
-        value: "587"
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_USER
@@ -70,7 +69,7 @@ services:
   - type: web
     name: edutrack-frontend
     runtime: docker
-    plan: 0.5c-512mb
+    plan: free
     region: singapore
     branch: main
     autoDeployTrigger: "off"
@@ -78,8 +77,8 @@ services:
     dockerContext: ./frontend
     healthCheckPath: /
     envVars:
-      - key: BACKEND_HOSTPORT
+      - key: BACKEND_UPSTREAM
         fromService:
-          type: pserv
+          type: web
           name: edutrack-backend
-          property: hostport
+          envVarKey: RENDER_EXTERNAL_URL
