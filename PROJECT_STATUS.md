@@ -16,6 +16,7 @@ Ngày bắt đầu: 2026-11-05. Dự án mới, tách khỏi Hong Beauty.
 - API quản lý lớp hỗ trợ tạo, sửa, đổi trạng thái, xóa mềm, ghi danh và rời lớp; học sinh chỉ xem lớp của chính mình.
 - Luồng liên kết phụ huynh: tạo tài khoản chờ kích hoạt nếu cần, gửi lời mời có hạn, phụ huynh đã đăng nhập xác nhận, giáo viên thu hồi, phụ huynh chỉ xem danh sách con đã liên kết.
 - Ngân hàng câu hỏi: migration V3, tám loại câu hỏi, kiểm tra cấu trúc đáp án theo từng loại, API giáo viên tạo/xem/lọc/sửa/xóa mềm và khóa phiên bản khi cập nhật.
+- Migration V4 tạo nền dữ liệu đề thi, bản chụp câu hỏi, giao bài, lượt làm, câu trả lời, điểm và lịch sử chấm. Chưa có API đề thi/làm bài.
 
 ## Đang làm
 - Đề thi, giao bài, engine làm bài, quản lý phiên, giao diện và Docker; chuẩn hóa kiến trúc controller/service và email outbox.
@@ -30,4 +31,5 @@ Ngày bắt đầu: 2026-11-05. Dự án mới, tách khỏi Hong Beauty.
 - Kiểm thử API phụ huynh: lời mời 201, kích hoạt 204, đăng nhập 200, xác nhận liên kết 204, xem con 200, dùng lại mã bị từ chối 400, thu hồi 204, danh sách con về 0.
 - Ngân hàng câu hỏi: tạo thành công cả 8 dạng qua API trên PostgreSQL, đáp án sai trả 400, khách ẩn danh trả 401, lọc trả 200, cập nhật với phiên bản cũ trả 409, xóa mềm trả 204.
 - 11 bài kiểm thử tự động cho validation câu hỏi: 11 đạt, 0 lỗi.
+- Flyway V4 áp dụng thành công trên PostgreSQL địa phương; ứng dụng khởi động với schema phiên bản 4.
 - Chưa kiểm thử production, SMTP thực, vai trò Student và an toàn bảo mật toàn diện.
