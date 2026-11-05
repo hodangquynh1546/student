@@ -1,0 +1,38 @@
+server:
+  forward-headers-strategy: framework
+  port: ${PORT:8080}
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/edutrack}
+    username: ${DATABASE_USER:edutrack}
+    password: ${DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+edutrack:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  cors-origin: ${CORS_ORIGIN:http://localhost:5173}
+  jwt:
+    issuer: ${JWT_ISSUER:edutrack}
+    access-minutes: ${JWT_ACCESS_MINUTES:15}
+  refresh-days: ${REFRESH_DAYS:30}
+  mail:
+    from: ${MAIL_FROM:no-reply@edutrack.local}
+    enabled: ${SMTP_ENABLED:false}

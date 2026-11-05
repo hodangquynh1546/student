@@ -1,0 +1,2 @@
+ALTER TABLE action_tokens ALTER COLUMN token_hash TYPE VARCHAR(64);
+ALTER TABLE refresh_sessions ALTER COLUMN token_hash TYPE VARCHAR(64);
