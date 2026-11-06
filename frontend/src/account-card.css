@@ -1,0 +1,14 @@
+.account-identity{display:flex;align-items:center;gap:12px;min-width:0;text-align:left}
+.account-avatar{flex:none;width:42px;height:42px;display:grid;place-items:center;overflow:hidden;border-radius:14px;background:linear-gradient(145deg,#dce9ff,#b8d0ff);color:#2857a8;font:800 1.15rem Manrope,sans-serif;box-shadow:inset 0 1px #ffffffaa}
+.account-avatar img{display:block;width:100%;height:100%;object-fit:cover}
+.account-copy{display:block;min-width:0}
+.account-copy strong,.account-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-copy strong{font-size:.84rem;color:#203b67;line-height:1.35}
+.account-copy small{font-size:.73rem;color:#7086a8;margin-top:2px}
+.account-card{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px;border:1px solid #dce7f9;border-radius:16px;background:linear-gradient(145deg,#f7faff,#eef4ff);box-shadow:0 6px 20px #4267a312;transition:transform .18s,box-shadow .18s,border-color .18s}
+.account-card:hover,.account-card:focus-visible{transform:translateY(-2px);border-color:#a6c3f5;box-shadow:0 10px 24px #4267a329;outline:none}
+.account-card-arrow{flex:none;color:#587eb9}
+.account-identity-large{gap:17px}
+.account-identity-large .account-avatar{width:68px;height:68px;border-radius:21px;font-size:1.8rem;background:#fff;color:#2b61ba;box-shadow:0 9px 25px #1b4c9952}
+.account-identity-large .account-copy strong{font-size:1.45rem;color:#fff;white-space:normal}
+.account-identity-large .account-copy small{font-size:.86rem;color:#d9e8ff}

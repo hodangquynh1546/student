@@ -1,0 +1,19 @@
+.profile-page{max-width:1130px;margin:0 auto}
+.profile-hero{position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;min-height:205px;padding:30px 34px;border-radius:23px;background:linear-gradient(115deg,#173c78 0%,#2d63b8 65%,#487bd1 100%);box-shadow:0 16px 35px #204a8f2c;margin-bottom:24px;color:#fff}
+.profile-hero-glow{position:absolute;right:-60px;top:-120px;width:320px;height:320px;border:1px solid #ffffff42;border-radius:50%;box-shadow:0 0 0 55px #ffffff0c,0 0 0 110px #ffffff08;pointer-events:none}
+.profile-hero-content,.profile-verified{position:relative;z-index:1}
+.profile-overline{display:block;margin-bottom:19px;font:800 .68rem Manrope,sans-serif;letter-spacing:.17em;color:#bdd6ff}
+.profile-email{display:flex;align-items:center;gap:8px;min-width:0;margin:15px 0 0 85px;color:#d8e8ff;font-size:.86rem;overflow-wrap:anywhere}
+.profile-verified{display:flex;align-items:center;gap:7px;white-space:nowrap;padding:8px 12px;border:1px solid #ffffff49;border-radius:999px;background:#ffffff19;color:#e6f2ff;font-size:.76rem;font-weight:700}
+.profile-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(310px,.8fr);gap:20px;align-items:start}
+.profile-panel{height:100%;padding:27px}
+.profile-section-title{display:flex;align-items:center;gap:13px;margin-bottom:24px}
+.profile-section-title h2{margin:0 0 3px;font-size:1.12rem}
+.profile-section-title p{margin:0;color:#8392aa;font-size:.79rem;line-height:1.45}
+.profile-section-icon{flex:none;display:grid;place-items:center;width:43px;height:43px;border-radius:13px;background:#eaf1ff;color:#3768bb}
+.profile-section-icon.secure{background:#eaf8f3;color:#257c5e}
+.profile-note{padding:12px 14px;margin:0 0 20px;border-radius:11px;background:#f5f8fd;color:#667a98;font-size:.81rem;line-height:1.45}
+.profile-panel .form-grid{gap:16px}
+.profile-panel .modal-actions{margin-top:6px}
+@media(max-width:920px){.profile-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.profile-hero{padding:26px 23px;min-height:190px;align-items:flex-start;flex-direction:column}.profile-email{margin-left:0}.profile-verified{align-self:flex-start}.profile-panel{padding:20px}}

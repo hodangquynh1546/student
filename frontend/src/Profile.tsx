@@ -3,9 +3,12 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useForm} from 'react-hook-form';
 import {useNavigate} from 'react-router-dom';
 import {z} from 'zod';
+import {LockKeyhole,Mail,ShieldCheck,UserRound} from 'lucide-react';
 import {api,errorMessage} from './api';
+import {AccountIdentity} from './AccountCard';
 import {useSession} from './session';
 import type {User} from './types';
+import './profile.css';
 
 const profileSchema=z.object({
  fullName:z.string().trim().min(2,'Nhập họ tên từ 2 ký tự').max(120),
@@ -22,10 +25,18 @@ export function Profile(){
  const password=useForm<PasswordInput>({resolver:zodResolver(passwordSchema)});
  const save=useMutation({mutationFn:async(values:ProfileInput)=>(await api.put<User>('/auth/me',{fullName:values.fullName.trim(),phone:values.phone.trim(),dateOfBirth:values.dateOfBirth||null})).data,onSuccess:updateUser});
  const change=useMutation({mutationFn:async(values:PasswordInput)=>api.post('/auth/change-password',values),onSuccess:()=>{clear();navigate('/login')}});
- return <div>
-  <div className="page-head"><div><span className="eyebrow">TÀI KHOẢN</span><h1>Hồ sơ cá nhân</h1><p>Cập nhật thông tin liên hệ và bảo vệ tài khoản của bạn.</p></div></div>
-  <div className="card-grid">
-   <section className="panel"><h2>Thông tin cá nhân</h2><p className="muted">Email: {user?.email}</p>
+ if(!user)return null;
+ return <div className="profile-page">
+  <div className="page-head"><div><span className="eyebrow">TÀI KHOẢN</span><h1>Hồ sơ cá nhân</h1><p>Thông tin của bạn, được giữ rõ ràng và an toàn.</p></div></div>
+  <section className="profile-hero" aria-label="Thông tin tài khoản">
+   <div className="profile-hero-glow" aria-hidden="true"/>
+   <div className="profile-hero-content"><span className="profile-overline">TÀI KHOẢN EDUTRACK</span><AccountIdentity user={user} large/>
+    <div className="profile-email"><Mail size={16}/><span>{user.email}</span></div>
+   </div>
+   <div className="profile-verified"><ShieldCheck size={17}/> Đang hoạt động</div>
+  </section>
+  <div className="profile-grid">
+   <section className="panel profile-panel"><div className="profile-section-title"><span className="profile-section-icon"><UserRound size={20}/></span><span><h2>Thông tin cá nhân</h2><p>Những thông tin hiển thị trong tài khoản của bạn.</p></span></div>
     <form className="form-grid" onSubmit={profile.handleSubmit(values=>save.mutate(values))}>
      <label className="full">Họ và tên<input {...profile.register('fullName')} autoComplete="name" required/>{profile.formState.errors.fullName&&<small className="field-error">{profile.formState.errors.fullName.message}</small>}</label>
      <label>Số điện thoại<input {...profile.register('phone')} autoComplete="tel"/>{profile.formState.errors.phone&&<small className="field-error">{profile.formState.errors.phone.message}</small>}</label>
@@ -35,7 +46,8 @@ export function Profile(){
      <div className="modal-actions"><button className="button primary" type="submit" disabled={save.isPending}>{save.isPending?'Đang lưu…':'Lưu hồ sơ'}</button></div>
     </form>
    </section>
-   <section className="panel"><h2>Đổi mật khẩu</h2><p className="muted">Sau khi đổi mật khẩu, bạn cần đăng nhập lại.</p>
+   <section className="panel profile-panel"><div className="profile-section-title"><span className="profile-section-icon secure"><LockKeyhole size={20}/></span><span><h2>Bảo mật tài khoản</h2><p>Đổi mật khẩu định kỳ để bảo vệ dữ liệu học tập.</p></span></div>
+    <p className="profile-note">Sau khi đổi mật khẩu, bạn cần đăng nhập lại trên thiết bị này.</p>
     <form className="form-grid" onSubmit={password.handleSubmit(values=>change.mutate(values))}>
      <label className="full">Mật khẩu hiện tại<input type="password" autoComplete="current-password" {...password.register('currentPassword')} required/>{password.formState.errors.currentPassword&&<small className="field-error">{password.formState.errors.currentPassword.message}</small>}</label>
      <label className="full">Mật khẩu mới<input type="password" autoComplete="new-password" {...password.register('newPassword')} required/>{password.formState.errors.newPassword&&<small className="field-error">{password.formState.errors.newPassword.message}</small>}</label>

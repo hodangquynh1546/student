@@ -16,3 +16,5 @@ Run the backend tests with `cd backend && mvn test`; run the frontend checks wit
 ## Configuration and deployment
 
 Use [docs/deployment.md](docs/deployment.md) and [render.yaml](render.yaml) for Compose and Render / Neon setup, storage, health checks, backup and release verification. `APP_ENV=production` and `SPRING_PROFILES_ACTIVE=prod` activate production validation. Gemini is optional; email delivery requires a working SMTP service in production. Never commit real environment files or keys.
+
+Optional evaluation records are in [scripts/demo-data.sql](scripts/demo-data.sql); read [docs/demo-data.md](docs/demo-data.md) before running them in your own database.

@@ -41,6 +41,7 @@ Ngày bắt đầu: 2026-11-05. Dự án mới, tách khỏi Hong Beauty.
 - Làm mới và đăng xuất qua cookie kiểm tra Origin theo allowlist hoặc Fetch Metadata `same-origin` khi thiếu Origin; từ chối khi cả hai thiếu. 5 bài kiểm thử riêng đạt sau build sạch; toàn bộ backend đã chạy lại đạt.
 - Cả ba vai trò có API và màn hình tự sửa họ tên, số điện thoại, ngày sinh; không cho đổi email/role qua form. Màn hình đổi mật khẩu yêu cầu đăng nhập lại. Kiểm thử backend và frontend liên quan, build frontend đạt; avatar vẫn chưa triển khai.
 - Bộ tài liệu kiến trúc và hợp đồng API đã có trong `docs/`; cấu hình Docker Compose đã viết, chưa chạy container được vì môi trường hiện thiếu Docker.
+- Khung avatar–tên–vai trò đã được tách thành component mở trang Hồ sơ; giao diện Hồ sơ được bố trí lại. Script dữ liệu mẫu có 2 lớp, 3 học sinh giả, 5 lượt ghi danh và 3 câu hỏi; chạy hai lần trên schema PostgreSQL tạm vẫn đúng số lượng, chưa chạy trên Neon của chủ vì không có kết nối được cấp.
 - Blueprint `render.yaml` đã chuyển sang hai web service gói Free theo yêu cầu. Backend phải công khai vì Free không hỗ trợ nhận kết nối mạng riêng; dữ liệu upload trên ổ cục bộ sẽ mất khi khởi động lại, và SMTP phải dùng cổng được Render Free cho phép. Đây chỉ là cấu hình đánh giá với dữ liệu thử; chưa tạo dịch vụ Render hay Neon và chưa chạy container thực tế.
 
 ## Đang làm
